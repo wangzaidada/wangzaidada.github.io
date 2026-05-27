@@ -30,6 +30,8 @@ const jsonOutput = document.getElementById("jsonOutput");
 const formatBtn = document.getElementById("formatBtn");
 const copyBtn = document.getElementById("copyBtn");
 const minifyBtn = document.getElementById("minifyBtn");
+const unescapeBtn = document.getElementById("unescapeBtn");
+const escapeBtn = document.getElementById("escapeBtn");
 
 function fmtDate(d) {
   const p = (n, len) => String(n).padStart(len || 2, '0');
@@ -123,6 +125,9 @@ function autoConvert(){
   const t = getSelectValue(rightUnit);
   if (!f || !t) return;
   rightVal.value = (v * cfg.factor[f] / cfg.factor[t]).toFixed(8);
+  rightVal.classList.remove("pop");
+  void rightVal.offsetWidth;
+  rightVal.classList.add("pop");
 }
 
 function autoConvertTs(){
@@ -176,17 +181,62 @@ function toggleTsLeft(){
   autoConvertTs();
 }
 
+let currentJSONText = "";
+
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function renderJSON(obj) {
+  if (obj === null) return '<span class="json-null">null</span>';
+  if (typeof obj === "boolean") return '<span class="json-bool">' + obj + '</span>';
+  if (typeof obj === "number") return '<span class="json-number">' + obj + '</span>';
+  if (typeof obj === "string") return '<span class="json-string">"' + escapeHTML(obj) + '"</span>';
+
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return '<span class="json-bracket">[]</span>';
+    var items = "";
+    for (var i = 0; i < obj.length; i++) {
+      items += '<div class="json-row">' + renderJSON(obj[i]);
+      if (i < obj.length - 1) items += '<span class="json-comma">,</span>';
+      items += '</div>';
+    }
+    return '<details open><summary><span class="json-bracket">[</span></summary><div class="json-children">' + items + '</div><div class="json-row"><span class="json-bracket">]</span></div></details>';
+  }
+
+  if (typeof obj === "object") {
+    var keys = Object.keys(obj);
+    if (keys.length === 0) return '<span class="json-bracket">{}</span>';
+    var items = "";
+    for (var i = 0; i < keys.length; i++) {
+      items += '<div class="json-row"><span class="json-key">"' + escapeHTML(keys[i]) + '"</span><span class="json-colon">: </span>' + renderJSON(obj[keys[i]]);
+      if (i < keys.length - 1) items += '<span class="json-comma">,</span>';
+      items += '</div>';
+    }
+    return '<details open><summary><span class="json-bracket">{</span></summary><div class="json-children">' + items + '</div><div class="json-row"><span class="json-bracket">}</span></div></details>';
+  }
+
+  return "";
+}
+
 function formatJSON() {
   try {
     const val = jsonInput.value.trim();
     if (!val) {
-      jsonOutput.value = "请输入JSON内容";
+      jsonOutput.innerHTML = '<div class="json-empty">请输入JSON内容</div>';
+      currentJSONText = "";
       return;
     }
     const parsed = JSON.parse(val);
-    jsonOutput.value = JSON.stringify(parsed, null, 2);
+    currentJSONText = JSON.stringify(parsed, null, 2);
+    jsonOutput.innerHTML = renderJSON(parsed);
   } catch (e) {
-    jsonOutput.value = `JSON格式错误：\n${e.message}`;
+    jsonOutput.innerHTML = '<div class="json-error">JSON格式错误：' + escapeHTML(e.message) + '</div>';
+    currentJSONText = "";
   }
 }
 
@@ -195,19 +245,70 @@ function minifyJSON() {
     const val = jsonInput.value.trim();
     if (!val) return;
     const parsed = JSON.parse(val);
-    jsonOutput.value = JSON.stringify(parsed);
+    currentJSONText = JSON.stringify(parsed);
+    jsonOutput.innerHTML = '<pre style="margin:0;white-space:pre-wrap;word-break:break-all;font-family:inherit;font-size:inherit;line-height:inherit;">' + escapeHTML(currentJSONText) + '</pre>';
   } catch (e) {
-    jsonOutput.value = `JSON格式错误：\n${e.message}`;
+    jsonOutput.innerHTML = '<div class="json-error">JSON格式错误：' + escapeHTML(e.message) + '</div>';
+    currentJSONText = "";
   }
 }
 
 function copyJSON() {
-  if (!jsonOutput.value) return;
-  navigator.clipboard.writeText(jsonOutput.value).then(() => {
+  if (!currentJSONText) return;
+  navigator.clipboard.writeText(currentJSONText).then(() => {
     const oldText = copyBtn.innerText;
     copyBtn.innerText = "复制成功！";
     setTimeout(() => copyBtn.innerText = oldText, 1500);
+  }).catch(() => {
+    const oldText = copyBtn.innerText;
+    copyBtn.innerText = "复制失败";
+    setTimeout(() => copyBtn.innerText = oldText, 1500);
   });
+}
+
+function unescapeOneLevel(str) {
+  var out = "";
+  for (var i = 0; i < str.length; i++) {
+    if (str[i] === "\\" && i + 1 < str.length) {
+      var next = str[i + 1];
+      switch (next) {
+        case "n": out += "\n"; break;
+        case "t": out += "\t"; break;
+        case "r": out += "\r"; break;
+        case "\\": out += "\\"; break;
+        case "\"": out += "\""; break;
+        case "/": out += "/"; break;
+        default: out += next; break;
+      }
+      i++;
+    } else {
+      out += str[i];
+    }
+  }
+  return out;
+}
+
+function escapeJSON() {
+  var val = jsonInput.value;
+  if (!val) return;
+  jsonInput.value = JSON.stringify(val);
+  formatJSON();
+}
+
+function unescapeJSON() {
+  try {
+    var val = jsonInput.value.trim();
+    if (!val) return;
+    var parsed = JSON.parse(val);
+    if (typeof parsed === "string") {
+      jsonInput.value = parsed;
+    } else {
+      jsonInput.value = JSON.stringify(parsed, null, 2);
+    }
+  } catch (e) {
+    jsonInput.value = unescapeOneLevel(jsonInput.value.trim());
+  }
+  formatJSON();
 }
 
 function initUnits(type){
@@ -240,6 +341,8 @@ document.getElementById("tsLeftNum").oninput = autoConvertTs;
 formatBtn.onclick = formatJSON;
 minifyBtn.onclick = minifyJSON;
 copyBtn.onclick = copyJSON;
+escapeBtn.onclick = escapeJSON;
+unescapeBtn.onclick = unescapeJSON;
 jsonInput.oninput = formatJSON;
 
 titleText.onclick = (e) => {

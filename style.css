@@ -8,15 +8,20 @@
   --input: #f9f9fb;
   --input-readonly: #f2f2f7;
   --hover: #f2f2f7;
-  --accent: #007aff;
-  --accent-hover: #0066cc;
-  --accent-ring: rgba(0,122,255,0.1);
+  --accent: #1d1d1f;
+  --accent-hover: #3a3a3c;
+  --accent-ring: rgba(0,0,0,0.08);
   --arrow: #86868b;
   --btn-secondary: #f2f2f7;
   --btn-secondary-hover: #e6e6eb;
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.12);
   --shadow-lg: 0 4px 24px rgba(0,0,0,0.12);
+  --json-key: #881391;
+  --json-string: #1a6e24;
+  --json-number: #b35c00;
+  --json-bool: #6a0dad;
+  --json-null: #808080;
 }
 
 /* === CSS 变量：夜间主题 === */
@@ -29,15 +34,20 @@ html.dark {
   --input: #2c2c2e;
   --input-readonly: #3a3a3c;
   --hover: #3a3a3c;
-  --accent: #0a84ff;
-  --accent-hover: #409cff;
-  --accent-ring: rgba(10,132,255,0.15);
+  --accent: #f5f5f7;
+  --accent-hover: #d1d1d6;
+  --accent-ring: rgba(255,255,255,0.1);
   --arrow: #98989d;
   --btn-secondary: #3a3a3c;
   --btn-secondary-hover: #48484a;
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.4);
   --shadow-lg: 0 4px 24px rgba(0,0,0,0.4);
+  --json-key: #e879b5;
+  --json-string: #7ec787;
+  --json-number: #e0a060;
+  --json-bool: #c792ea;
+  --json-null: #a0a0a0;
 }
 
 /* 全局重置 & 基础样式 */
@@ -67,8 +77,8 @@ body{
   opacity: 0.8;
 }
 ::selection {
-  background: var(--accent);
-  color: #fff;
+  background: var(--text);
+  color: var(--bg);
 }
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
@@ -197,6 +207,7 @@ input[type=number] {
   font-size:17px;
   background: var(--input);
   color: var(--text);
+  caret-color: var(--text);
   outline:none;
   transition: all .2s ease, background 0.3s, border-color 0.3s, color 0.3s;
 }
@@ -249,14 +260,14 @@ input[type=number] {
   height: 44px;
   border-radius: 12px;
   border: none;
-  background: var(--accent);
-  color: white;
+  background: var(--text);
+  color: var(--bg);
   font-size: 16px;
   cursor: pointer;
   transition: all 0.2s;
 }
 .json-btn:hover{
-  background: var(--accent-hover);
+  opacity: 0.8;
 }
 .json-btn:active{
   transform: scale(0.98);
@@ -267,6 +278,99 @@ input[type=number] {
 }
 .json-btn.secondary:hover{
   background: var(--btn-secondary-hover);
+}
+
+/* JSON 可视化视图 */
+.json-view {
+  width: 100%;
+  min-height: 180px;
+  max-height: 500px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--input-readonly);
+  overflow: auto;
+  font-family: Menlo, Monaco, Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  transition: background 0.3s, border-color 0.3s;
+  cursor: default;
+  user-select: text;
+  white-space: nowrap;
+}
+
+/* JSON Token 着色 */
+.json-key { color: var(--json-key); }
+.json-string { color: var(--json-string); }
+.json-number { color: var(--json-number); }
+.json-bool { color: var(--json-bool); }
+.json-null { color: var(--json-null); opacity: 0.7; }
+.json-bracket { color: var(--text-secondary); }
+.json-colon { color: var(--text-secondary); }
+.json-comma { color: var(--text-secondary); }
+
+/* JSON 行 */
+.json-row {
+  padding-right: 0;
+}
+
+/* JSON 折叠面板 */
+.json-view details {
+  display: block;
+}
+.json-view summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 2px 0;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+.json-view summary::-webkit-details-marker {
+  display: none;
+}
+.json-view summary::marker {
+  display: none;
+}
+.json-view summary::before {
+  content: "▶";
+  display: inline-block;
+  width: 16px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  transition: transform 0.15s;
+  opacity: 0.6;
+  text-align: center;
+}
+.json-view details[open] > summary::before {
+  transform: rotate(90deg);
+}
+.json-view summary:hover {
+  background: var(--hover);
+}
+.json-children {
+  border-left: 1px solid var(--border);
+  margin-left: 12px;
+  padding-left: 8px;
+}
+
+/* JSON 空提示 */
+.json-empty {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 148px;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+}
+
+/* JSON 错误提示 */
+.json-error {
+  color: #e06c75;
+  font-family: Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 /* 时间戳布局 */
@@ -437,17 +541,17 @@ input[type=number] {
   --adp-color-disabled: #c6c6c8;
   --adp-day-name-color: #6e6e73;
   --adp-day-cell-border-radius: 10px;
-  --adp-accent-color: #007aff;
+  --adp-accent-color: #1d1d1f;
   --adp-background-color-hover: #f2f2f7;
   --adp-cell-background-color-hover: #f2f2f7;
-  --adp-cell-background-color-selected: #007aff;
+  --adp-cell-background-color-selected: #1d1d1f;
   --adp-cell-color-selected: #fff;
-  --adp-cell-background-color-in-range: rgba(0,122,255,0.1);
-  --adp-nav-arrow-color: #007aff;
+  --adp-cell-background-color-in-range: rgba(0,0,0,0.06);
+  --adp-nav-arrow-color: #1d1d1f;
   --adp-nav-action-size: 32px;
   --adp-nav-action-border-radius: 8px;
   --adp-time-cell-background-color-hover: #f2f2f7;
-  --adp-time-cell-background-color-selected: #007aff;
+  --adp-time-cell-background-color-selected: #1d1d1f;
   --adp-shadow: 0 4px 24px rgba(0,0,0,0.12);
 }
 
@@ -459,14 +563,15 @@ html.dark .air-datepicker {
   --adp-color-other-month: #636366;
   --adp-color-disabled: #636366;
   --adp-day-name-color: #98989d;
-  --adp-accent-color: #0a84ff;
+  --adp-accent-color: #f5f5f7;
   --adp-background-color-hover: #3a3a3c;
   --adp-cell-background-color-hover: #3a3a3c;
-  --adp-cell-background-color-selected: #0a84ff;
-  --adp-cell-background-color-in-range: rgba(10,132,255,0.15);
-  --adp-nav-arrow-color: #0a84ff;
+  --adp-cell-background-color-selected: #f5f5f7;
+  --adp-cell-color-selected: #1c1c1e;
+  --adp-cell-background-color-in-range: rgba(255,255,255,0.08);
+  --adp-nav-arrow-color: #f5f5f7;
   --adp-time-cell-background-color-hover: #3a3a3c;
-  --adp-time-cell-background-color-selected: #0a84ff;
+  --adp-time-cell-background-color-selected: #f5f5f7;
   --adp-shadow: 0 4px 24px rgba(0,0,0,0.4);
 }
 
@@ -513,4 +618,15 @@ html.dark .air-datepicker {
 .air-datepicker-time--row input[type="range"]::-ms-thumb {
   background: var(--adp-accent-color);
   border-color: var(--adp-accent-color);
+}
+
+/* === 动画 === */
+@keyframes number-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+.input-box.pop {
+  animation: number-pop 0.25s ease;
 }

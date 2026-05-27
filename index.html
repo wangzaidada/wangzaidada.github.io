@@ -87,9 +87,11 @@
   </div>
   <div class="side">
     <div class="unit-label">格式化结果</div>
-    <textarea class="json-textarea" id="jsonOutput" readonly placeholder="格式化后的JSON"></textarea>
+    <div class="json-view" id="jsonOutput"></div>
     <div class="json-btn-group">
       <button class="json-btn" id="formatBtn">格式化JSON</button>
+      <button class="json-btn secondary" id="escapeBtn">转义</button>
+      <button class="json-btn secondary" id="unescapeBtn">去转义</button>
       <button class="json-btn secondary" id="copyBtn">一键复制</button>
       <button class="json-btn secondary" id="minifyBtn">压缩JSON</button>
     </div>
