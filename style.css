@@ -513,19 +513,40 @@ input[type=number] {
   transform: scale(0.92);
 }
 
-/* 主题切换按钮：背景与页面一致，内点与文字同色（形成反差） */
+/* 主题切换按钮 */
 .theme-toggle {
   background: var(--bg);
   border: 1.5px solid var(--border);
+  color: var(--text);
 }
 
-.theme-toggle::after {
-  content: "";
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: var(--text);
-  transition: background 0.3s;
+/* 眼睛图标 */
+.eye-icon {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  transition: opacity 0.35s, transform 0.35s;
+  pointer-events: none;
+}
+
+.eye-open {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.eye-closed {
+  opacity: 0;
+  transform: scale(0.5) rotate(-30deg);
+}
+
+html.dark .eye-open {
+  opacity: 0;
+  transform: scale(0.5) rotate(30deg);
+}
+
+html.dark .eye-closed {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
 }
 
 /* === air-datepicker CSS 变量覆盖 === */
