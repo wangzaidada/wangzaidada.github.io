@@ -31,55 +31,34 @@ const formatBtn = document.getElementById("formatBtn");
 const copyBtn = document.getElementById("copyBtn");
 const minifyBtn = document.getElementById("minifyBtn");
 
-const monthNames = ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"];
-
-function addMonthPicker(fp) {
-  const monthEl = fp.calendarContainer.querySelector(".flatpickr-current-month .cur-month");
-  if (!monthEl) return;
-  monthEl.style.cursor = "pointer";
-
-  const grid = document.createElement("div");
-  grid.className = "month-picker-grid";
-  grid.style.display = "none";
-  monthNames.forEach((name, i) => {
-    const cell = document.createElement("div");
-    cell.className = "month-picker-cell";
-    cell.textContent = name;
-    cell.addEventListener("click", (e) => {
-      e.stopPropagation();
-      fp.changeMonth(i - fp.currentMonth, false);
-      grid.style.display = "none";
-    });
-    grid.appendChild(cell);
-  });
-  fp.calendarContainer.querySelector(".flatpickr-months").appendChild(grid);
-
-  monthEl.addEventListener("click", (e) => {
-    e.stopPropagation();
-    grid.style.display = grid.style.display === "none" ? "grid" : "none";
-  });
-
-  fp.calendarContainer.addEventListener("click", () => {
-    grid.style.display = "none";
-  });
+function fmtDate(d) {
+  const p = (n, len) => String(n).padStart(len || 2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-const fpConfig = {
-  enableTime: true,
-  time_24hr: true,
-  dateFormat: "Y-m-d H:i:S",
-  locale: "zh",
-  monthSelectorType: "static",
-  onReady: function(_, __, fp) { addMonthPicker(fp); },
-  onChange: function() { autoConvertTs(); }
+const zhLocale = {
+  days: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
+  daysShort: ['日', '一', '二', '三', '四', '五', '六'],
+  daysMin: ['日', '一', '二', '三', '四', '五', '六'],
+  months: ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'],
+  monthsShort: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+  today: '今天',
+  clear: '清除',
+  timeFormat: 'HH:mm:ss',
+  firstDay: 1
 };
 
-const fpLeft = flatpickr("#tsLeftDate", fpConfig);
-
-const fpRight = flatpickr("#tsRightDate", {
-  ...fpConfig,
-  clickOpens: false,
-  onChange: undefined
+const dpLeft = new AirDatepicker('#tsLeftDate', {
+  timepicker: true,
+  locale: zhLocale,
+  selectedDates: [new Date()],
+  dateFormat: fmtDate,
+  navTitles: {
+    days: '<i>MMMM</i> yyyy',
+    months: 'yyyy',
+    years: 'yyyy1 — yyyy2'
+  },
+  onSelect: function() { autoConvertTs(); }
 });
 
 // --- 自定义下拉框逻辑 ---
@@ -149,34 +128,38 @@ function autoConvert(){
 function autoConvertTs(){
   const lt = getSelectValue(document.getElementById("tsLeftType"));
   const rt = getSelectValue(document.getElementById("tsRightType"));
+  const tsLeftNum = document.getElementById("tsLeftNum");
+  const tsLeftDate = document.getElementById("tsLeftDate");
+  const tsRightNum = document.getElementById("tsRightNum");
+  const tsRightDate = document.getElementById("tsRightDate");
 
   if(lt === "timestamp"){
-    let ts = parseInt(document.getElementById("tsLeftNum").value || 0);
+    let ts = Number(tsLeftNum.value || 0);
     if(ts.toString().length === 10) ts *= 1000;
     const d = new Date(ts);
     if(rt === "datetime"){
-      fpRight.setDate(d, false);
-      document.getElementById("tsRightDate").classList.remove("hidden");
-      document.getElementById("tsRightNum").classList.add("hidden");
+      tsRightDate.value = fmtDate(d);
+      tsRightDate.classList.remove("hidden");
+      tsRightNum.classList.add("hidden");
     } else {
-      document.getElementById("tsRightNum").value = d.getTime();
-      document.getElementById("tsRightNum").classList.remove("hidden");
-      document.getElementById("tsRightDate").classList.add("hidden");
+      tsRightNum.value = d.getTime();
+      tsRightNum.classList.remove("hidden");
+      tsRightDate.classList.add("hidden");
     }
   }
 
   if(lt === "datetime"){
-    const dates = fpLeft.selectedDates;
+    const dates = dpLeft.selectedDates;
     if(!dates.length) return;
     const ts = dates[0].getTime();
     if(rt === "timestamp"){
-      document.getElementById("tsRightNum").value = ts;
-      document.getElementById("tsRightNum").classList.remove("hidden");
-      document.getElementById("tsRightDate").classList.add("hidden");
+      tsRightNum.value = ts;
+      tsRightNum.classList.remove("hidden");
+      tsRightDate.classList.add("hidden");
     } else {
-      fpRight.setDate(dates[0], false);
-      document.getElementById("tsRightDate").classList.remove("hidden");
-      document.getElementById("tsRightNum").classList.add("hidden");
+      tsRightDate.value = fmtDate(dates[0]);
+      tsRightDate.classList.remove("hidden");
+      tsRightNum.classList.add("hidden");
     }
   }
 }
@@ -286,3 +269,10 @@ document.getElementById("nextBtn").onclick = () => {
 };
 
 initUnits(curType);
+
+// --- 日夜切换 ---
+document.getElementById("themeToggle").onclick = function() {
+  var html = document.documentElement;
+  var isDark = html.classList.toggle("dark");
+  localStorage.setItem("theme", isDark ? "dark" : "light");
+};

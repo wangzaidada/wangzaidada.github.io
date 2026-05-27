@@ -4,7 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>单位换算</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script>
+(function(){
+  var d = document.documentElement;
+  var t = localStorage.getItem('theme');
+  if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    d.classList.add('dark');
+  }
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/air-datepicker@3/air-datepicker.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -87,8 +96,11 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>
+<div class="float-nav" id="floatNav">
+  <button class="float-btn theme-toggle" id="themeToggle" title="切换日间/夜间模式"></button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/air-datepicker@3/air-datepicker.min.js"></script>
 <script src="main.js"></script>
 </body>
 </html>
