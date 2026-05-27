@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>单位换算</title>
+<style>
+/* 全局重置 & 基础样式 */
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,San Francisco,Helvetica Neue,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+html,body{
+  height: 100%;
+}
+body{
+  background:#f5f5f7;
+  padding:30px 16px;
+  max-width:600px;
+  margin:0 auto;
+  color:#1d1d1f;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+::placeholder {
+  color: #86868b;
+  opacity: 0.8;
+}
+::selection {
+  background: #007aff;
+  color: #fff;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* 顶部栏 */
+.top-bar{
+  position: relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:#fff;
+  border-radius:16px;
+  padding:16px 20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+.top-btn{
+  font-size:18px;
+  color:#007aff;
+  background:none;
+  border:none;
+  cursor:pointer;
+  padding:8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+}
+.top-btn:hover{
+  background: #f2f2f7;
+}
+.top-btn:active{
+  transform: scale(0.95);
+}
+.main-title{
+  flex:1;
+  text-align:center;
+  font-size:19px;
+  font-weight:600;
+  cursor:pointer;
+  user-select:none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.main-title:hover{
+  background: #f2f2f7;
+}
+
+/* 分类菜单 */
+.menu{
+  display:none;
+  position:absolute;
+  top: calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#fff;
+  border-radius:12px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.12);
+  padding:8px 0;
+  min-width:180px;
+  z-index:99;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.menu.show{
+  display: block;
+  opacity: 1;
+}
+.menu-item{
+  padding:12px 24px;
+  text-align:center;
+  cursor:pointer;
+  font-size:16px;
+  transition: background 0.2s;
+}
+.menu-item:hover{
+  background:#f2f2f7;
+  color: #007aff;
+}
+
+/* 换算容器 */
+.convert-wrap{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  transition: opacity 0.2s ease;
+}
+/* JSON专属容器（垂直布局，适配长文本） */
+.json-wrap{
+  display:flex;
+  flex-direction: column;
+  gap:16px;
+  width: 100%;
+}
+.side{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.unit-label{
+  font-size:15px;
+  color:#6e6e73;
+  text-align:center;
+  font-weight: 500;
+}
+
+/* 输入框/选择框/文本域 统一样式 */
+.input-box{
+  width:100%;
+  height:52px;
+  padding:0 16px;
+  border:1px solid #e6e6eb;
+  border-radius:14px;
+  font-size:17px;
+  background:#f9f9fb;
+  outline:none;
+  transition:all .2s ease;
+}
+.input-box:focus{
+  border-color:#007aff;
+  background:#fff;
+  box-shadow: 0 0 0 4px rgba(0,122,255,0.1);
+}
+.input-box[readonly] {
+  background: #f2f2f7;
+  cursor: default;
+  border-color: #e6e6eb;
+  caret-color: transparent;
+}
+
+.unit-select{
+  width:100%;
+  height:52px;
+  padding:0 16px;
+  border:1px solid #e6e6eb;
+  border-radius:14px;
+  font-size:16px;
+  background:#f9f9fb;
+  outline:none;
+  appearance:none;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 24 24' fill='none' stroke='%2386868b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 16px center;
+  background-size:10px;
+  transition:all .2s ease;
+}
+.unit-select:hover{
+  background-color: #f2f2f7;
+}
+.unit-select:focus{
+  border-color:#007aff;
+  background:#fff;
+  box-shadow: 0 0 0 4px rgba(0,122,255,0.1);
+}
+
+/* JSON文本域样式（核心新增） */
+.json-textarea{
+  width:100%;
+  min-height:180px;
+  padding:16px;
+  border:1px solid #e6e6eb;
+  border-radius:14px;
+  font-size:15px;
+  background:#f9f9fb;
+  outline:none;
+  resize: vertical;
+  font-family: Menlo, Monaco, Consolas, monospace;
+  transition:all .2s ease;
+  line-height: 1.5;
+}
+.json-textarea:focus{
+  border-color:#007aff;
+  background:#fff;
+  box-shadow: 0 0 0 4px rgba(0,122,255,0.1);
+}
+.json-textarea[readonly]{
+  background: #f2f2f7;
+  cursor: default;
+}
+
+/* JSON操作按钮 */
+.json-btn-group{
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.json-btn{
+  flex:1;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: #007aff;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.json-btn:hover{
+  background: #0066cc;
+}
+.json-btn:active{
+  transform: scale(0.98);
+}
+.json-btn.secondary{
+  background: #f2f2f7;
+  color: #1d1d1f;
+}
+.json-btn.secondary:hover{
+  background: #e6e6eb;
+}
+
+/* 时间戳布局 */
+.ts-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* 工具类 */
+.hidden{
+  display:none !important;
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <button class="top-btn" id="prevBtn">◀</button>
+  <div class="main-title" id="titleText">时间单位</div>
+  <button class="top-btn" id="nextBtn">▶</button>
+  <div class="menu" id="catMenu">
+    <div class="menu-item" data-type="time">时间单位</div>
+    <div class="menu-item" data-type="length">长度单位</div>
+    <div class="menu-item" data-type="ts">时间戳↔日期</div>
+    <!-- 新增JSON菜单选项 -->
+    <div class="menu-item" data-type="json">JSON格式化</div>
+  </div>
+</div>
+
+<!-- 原有单位换算 -->
+<div class="convert-wrap">
+  <div class="side">
+    <div class="unit-label">单位</div>
+    <input type="number" class="input-box" id="leftVal" placeholder="输入数值">
+    <select class="unit-select" id="leftUnit"></select>
+  </div>
+
+  <div class="side">
+    <div class="unit-label">单位</div>
+    <input type="number" class="input-box" id="rightVal" placeholder="结果" readonly>
+    <select class="unit-select" id="rightUnit"></select>
+  </div>
+</div>
+
+<!-- 原有时间戳 -->
+<div class="convert-wrap hidden" id="tsWrap">
+  <div class="side">
+    <div class="unit-label">类型</div>
+    <div class="ts-input-group">
+      <input type="number" class="input-box" id="tsLeftNum" placeholder="时间戳">
+      <input type="datetime-local" class="input-box hidden" id="tsLeftDate">
+    </div>
+    <select class="unit-select" id="tsLeftType">
+      <option value="timestamp">时间戳</option>
+      <option value="datetime">日期时间</option>
+    </select>
+  </div>
+
+  <div class="side">
+    <div class="unit-label">类型</div>
+    <div class="ts-input-group">
+      <input type="number" class="input-box" id="tsRightNum" readonly>
+      <input type="datetime-local" class="input-box hidden" id="tsRightDate" readonly>
+    </div>
+    <select class="unit-select" id="tsRightType">
+      <option value="datetime">日期时间</option>
+      <option value="timestamp">时间戳</option>
+    </select>
+  </div>
+</div>
+
+<!-- 新增JSON格式化容器 -->
+<div class="json-wrap hidden" id="jsonWrap">
+  <div class="side">
+    <div class="unit-label">输入JSON</div>
+    <textarea class="json-textarea" id="jsonInput" placeholder='粘贴JSON字符串，例如：{"name":"测试","age":18}'></textarea>
+  </div>
+  <div class="side">
+    <div class="unit-label">格式化结果</div>
+    <textarea class="json-textarea" id="jsonOutput" readonly placeholder="格式化后的JSON"></textarea>
+    <div class="json-btn-group">
+      <button class="json-btn" id="formatBtn">格式化JSON</button>
+      <button class="json-btn secondary" id="copyBtn">一键复制</button>
+      <button class="json-btn secondary" id="minifyBtn">压缩JSON</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const unitConfig = {
+  time: {
+    name:"时间单位",
+    units:[{v:"ms",n:"毫秒"},{v:"s",n:"秒"},{v:"min",n:"分钟"},{v:"h",n:"小时"},{v:"day",n:"天"}],
+    factor:{ms:1,s:1000,min:60000,h:3600000,day:86400000}
+  },
+  length:{
+    name:"长度单位",
+    units:[{v:"mm",n:"毫米"},{v:"cm",n:"厘米"},{v:"m",n:"米"},{v:"km",n:"千米"},{v:"inch",n:"英寸"},{v:"ft",n:"英尺"}],
+    factor:{mm:1,cm:10,m:1000,km:1000000,inch:25.4,ft:304.8}
+  },
+  ts:{name:"时间戳↔日期"},
+  // 新增JSON配置
+  json:{name:"JSON格式化"}
+};
+
+// 新增json类型
+const typeList = ["time","length","ts","json"];
+let curType = "time";
+
+const titleText = document.getElementById("titleText");
+const catMenu = document.getElementById("catMenu");
+const leftVal = document.getElementById("leftVal");
+const rightVal = document.getElementById("rightVal");
+const leftUnit = document.getElementById("leftUnit");
+const rightUnit = document.getElementById("rightUnit");
+const convertWrap = document.querySelector(".convert-wrap");
+const tsWrap = document.getElementById("tsWrap");
+// JSON元素获取
+const jsonWrap = document.getElementById("jsonWrap");
+const jsonInput = document.getElementById("jsonInput");
+const jsonOutput = document.getElementById("jsonOutput");
+const formatBtn = document.getElementById("formatBtn");
+const copyBtn = document.getElementById("copyBtn");
+const minifyBtn = document.getElementById("minifyBtn");
+
+// 普通单位自动转换
+function autoConvert(){
+  if(curType === "ts") return;
+  const cfg = unitConfig[curType];
+  const v = parseFloat(leftVal.value || 0);
+  const f = leftUnit.value;
+  const t = rightUnit.value;
+  rightVal.value = (v * cfg.factor[f] / cfg.factor[t]).toFixed(8);
+}
+
+// 时间戳自动转换
+function autoConvertTs(){
+  const lt = document.getElementById("tsLeftType").value;
+  const rt = document.getElementById("tsRightType").value;
+
+  if(lt === "timestamp"){
+    let ts = parseInt(document.getElementById("tsLeftNum").value || 0);
+    if(ts.toString().length === 10) ts *= 1000;
+    const d = new Date(ts);
+
+    if(rt === "datetime"){
+      document.getElementById("tsRightDate").value = d.toISOString().slice(0,16);
+      document.getElementById("tsRightDate").classList.remove("hidden");
+      document.getElementById("tsRightNum").classList.add("hidden");
+    } else {
+      document.getElementById("tsRightNum").value = d.getTime();
+      document.getElementById("tsRightNum").classList.remove("hidden");
+      document.getElementById("tsRightDate").classList.add("hidden");
+    }
+  }
+
+  if(lt === "datetime"){
+    const val = document.getElementById("tsLeftDate").value;
+    if(!val) return;
+    const ts = new Date(val).getTime();
+    if(rt === "timestamp"){
+      document.getElementById("tsRightNum").value = ts;
+      document.getElementById("tsRightNum").classList.remove("hidden");
+      document.getElementById("tsRightDate").classList.add("hidden");
+    } else {
+      document.getElementById("tsRightDate").value = val;
+      document.getElementById("tsRightDate").classList.remove("hidden");
+      document.getElementById("tsRightNum").classList.add("hidden");
+    }
+  }
+}
+
+// 切换左侧时间戳类型
+function toggleTsLeft(){
+  const t = document.getElementById("tsLeftType").value;
+  if(t === "timestamp"){
+    document.getElementById("tsLeftNum").classList.remove("hidden");
+    document.getElementById("tsLeftDate").classList.add("hidden");
+  } else {
+    document.getElementById("tsLeftNum").classList.add("hidden");
+    document.getElementById("tsLeftDate").classList.remove("hidden");
+  }
+  autoConvertTs();
+}
+
+// ---------------------- 新增JSON核心功能 ----------------------
+// JSON格式化
+function formatJSON() {
+  try {
+    const val = jsonInput.value.trim();
+    if (!val) {
+      jsonOutput.value = "请输入JSON内容";
+      return;
+    }
+    const parsed = JSON.parse(val);
+    jsonOutput.value = JSON.stringify(parsed, null, 2);
+  } catch (e) {
+    jsonOutput.value = `JSON格式错误：\n${e.message}`;
+  }
+}
+
+// JSON压缩（去除空格换行）
+function minifyJSON() {
+  try {
+    const val = jsonInput.value.trim();
+    if (!val) return;
+    const parsed = JSON.parse(val);
+    jsonOutput.value = JSON.stringify(parsed);
+  } catch (e) {
+    jsonOutput.value = `JSON格式错误：\n${e.message}`;
+  }
+}
+
+// 一键复制结果
+function copyJSON() {
+  if (!jsonOutput.value) return;
+  navigator.clipboard.writeText(jsonOutput.value).then(() => {
+    const oldText = copyBtn.innerText;
+    copyBtn.innerText = "复制成功！";
+    setTimeout(() => copyBtn.innerText = oldText, 1500);
+  });
+}
+// ---------------------- JSON功能结束 ----------------------
+
+// 初始化界面（兼容JSON）
+function initUnits(type){
+  leftUnit.innerHTML = "";
+  rightUnit.innerHTML = "";
+
+  // 隐藏所有容器
+  convertWrap.classList.add("hidden");
+  tsWrap.classList.add("hidden");
+  jsonWrap.classList.add("hidden");
+
+  if(type === "ts"){
+    tsWrap.classList.remove("hidden");
+    titleText.innerText = "时间戳 ↔ 日期";
+    return;
+  }
+
+  if(type === "json"){
+    jsonWrap.classList.remove("hidden");
+    titleText.innerText = "JSON格式化";
+    return;
+  }
+
+  convertWrap.classList.remove("hidden");
+  const cfg = unitConfig[type];
+  cfg.units.forEach(u => {
+    leftUnit.innerHTML += `<option value="${u.v}">${u.n}</option>`;
+    rightUnit.innerHTML += `<option value="${u.v}">${u.n}</option>`;
+  });
+  titleText.innerText = cfg.name;
+}
+
+// 绑定原有事件
+leftVal.oninput = autoConvert;
+leftUnit.onchange = autoConvert;
+rightUnit.onchange = autoConvert;
+
+document.getElementById("tsLeftType").onchange = toggleTsLeft;
+document.getElementById("tsLeftNum").oninput = autoConvertTs;
+document.getElementById("tsLeftDate").onchange = autoConvertTs;
+document.getElementById("tsRightType").onchange = autoConvertTs;
+
+// 绑定JSON事件
+formatBtn.onclick = formatJSON;
+minifyBtn.onclick = minifyJSON;
+copyBtn.onclick = copyJSON;
+// 输入JSON自动格式化
+jsonInput.oninput = formatJSON;
+
+// 标题菜单
+titleText.onclick = (e) => {
+  e.stopPropagation();
+  catMenu.classList.toggle("show");
+};
+document.querySelectorAll(".menu-item").forEach(item => {
+  item.onclick = () => {
+    curType = item.dataset.type;
+    initUnits(curType);
+    catMenu.classList.remove("show");
+  };
+});
+
+// 点击空白关闭菜单
+document.addEventListener('click', () => {
+  catMenu.classList.remove("show");
+});
+catMenu.addEventListener('click', (e) => e.stopPropagation());
+
+// 左右切换（兼容JSON）
+document.getElementById("prevBtn").onclick = () => {
+  let idx = typeList.indexOf(curType);
+  idx = idx <= 0 ? typeList.length - 1 : idx - 1;
+  curType = typeList[idx];
+  initUnits(curType);
+};
+document.getElementById("nextBtn").onclick = () => {
+  let idx = typeList.indexOf(curType);
+  idx = idx >= typeList.length - 1 ? 0 : idx + 1;
+  curType = typeList[idx];
+  initUnits(curType);
+};
+
+initUnits(curType);
+</script>
+</body>
+</html>
