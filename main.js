@@ -31,20 +31,55 @@ const formatBtn = document.getElementById("formatBtn");
 const copyBtn = document.getElementById("copyBtn");
 const minifyBtn = document.getElementById("minifyBtn");
 
-const fpLeft = flatpickr("#tsLeftDate", {
+const monthNames = ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"];
+
+function addMonthPicker(fp) {
+  const monthEl = fp.calendarContainer.querySelector(".flatpickr-current-month .cur-month");
+  if (!monthEl) return;
+  monthEl.style.cursor = "pointer";
+
+  const grid = document.createElement("div");
+  grid.className = "month-picker-grid";
+  grid.style.display = "none";
+  monthNames.forEach((name, i) => {
+    const cell = document.createElement("div");
+    cell.className = "month-picker-cell";
+    cell.textContent = name;
+    cell.addEventListener("click", (e) => {
+      e.stopPropagation();
+      fp.changeMonth(i - fp.currentMonth, false);
+      grid.style.display = "none";
+    });
+    grid.appendChild(cell);
+  });
+  fp.calendarContainer.querySelector(".flatpickr-months").appendChild(grid);
+
+  monthEl.addEventListener("click", (e) => {
+    e.stopPropagation();
+    grid.style.display = grid.style.display === "none" ? "grid" : "none";
+  });
+
+  fp.calendarContainer.addEventListener("click", () => {
+    grid.style.display = "none";
+  });
+}
+
+const fpConfig = {
   enableTime: true,
   time_24hr: true,
   dateFormat: "Y-m-d H:i:S",
   locale: "zh",
+  monthSelectorType: "static",
+  onReady: function(_, __, fp) { addMonthPicker(fp); },
   onChange: function() { autoConvertTs(); }
-});
+};
+
+const fpLeft = flatpickr("#tsLeftDate", fpConfig);
 
 const fpRight = flatpickr("#tsRightDate", {
-  enableTime: true,
-  time_24hr: true,
-  dateFormat: "Y-m-d H:i:S",
-  locale: "zh",
-  clickOpens: false
+  ...fpConfig,
+  clickOpens: false,
+  onChange: undefined
 });
 
 // --- 自定义下拉框逻辑 ---

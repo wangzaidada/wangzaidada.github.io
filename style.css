@@ -327,3 +327,61 @@ input[type=number] {
 .flatpickr-months .flatpickr-month{
   border-radius: 12px 12px 0 0;
 }
+.flatpickr-current-month{
+  font-size: 15px;
+  font-weight: 600;
+}
+.flatpickr-current-month .numInputWrapper input.cur-year{
+  font-size: 15px;
+  font-weight: 600;
+}
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month{
+  border-radius: 8px;
+  padding: 8px;
+  transition: background 0.2s;
+}
+.flatpickr-months .flatpickr-prev-month:hover,
+.flatpickr-months .flatpickr-next-month:hover{
+  background: #f2f2f7;
+}
+.flatpickr-months .flatpickr-prev-month svg,
+.flatpickr-months .flatpickr-next-month svg{
+  fill: #007aff;
+}
+.flatpickr-time input{
+  font-size: 15px;
+  font-weight: 500;
+}
+.flatpickr-current-month .cur-month{
+  transition: color 0.2s;
+}
+.flatpickr-current-month .cur-month:hover{
+  color: #007aff;
+}
+.month-picker-grid{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 12px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  z-index: 100;
+}
+.month-picker-cell{
+  padding: 10px 4px;
+  text-align: center;
+  font-size: 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.month-picker-cell:hover{
+  background: #f2f2f7;
+  color: #007aff;
+}
