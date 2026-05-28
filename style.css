@@ -238,6 +238,21 @@ input[type=number] {
   font-family: Menlo, Monaco, Consolas, monospace;
   transition: all .2s ease, background 0.3s, border-color 0.3s, color 0.3s;
   line-height: 1.5;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.json-textarea::-webkit-scrollbar {
+  width: 5px;
+}
+.json-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+.json-textarea::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+.json-textarea::-webkit-scrollbar-thumb:hover {
+  background: var(--arrow);
 }
 .json-textarea:focus{
   border-color: var(--accent);
@@ -298,6 +313,22 @@ input[type=number] {
   cursor: default;
   user-select: text;
   white-space: nowrap;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.json-view::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.json-view::-webkit-scrollbar-track {
+  background: transparent;
+}
+.json-view::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+.json-view::-webkit-scrollbar-thumb:hover {
+  background: var(--arrow);
 }
 
 /* JSON Token 着色 */
