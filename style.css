@@ -384,6 +384,14 @@ input[type=number] {
   margin-left: 12px;
   padding-left: 8px;
 }
+.json-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+.json-view details[open] > summary .json-hint {
+  display: none;
+}
 
 /* JSON 空提示 */
 .json-empty {
@@ -681,4 +689,184 @@ html.dark .air-datepicker {
 
 .input-box.pop {
   animation: number-pop 0.25s ease;
+}
+
+/* === 侧边栏（默认隐藏，PC端显示） === */
+.sidebar {
+  display: none;
+}
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+}
+.section-title {
+  display: none;
+}
+.tool-section {
+  display: contents;
+}
+
+/* === PC端响应式布局 === */
+@media (min-width: 768px) {
+  body {
+    max-width: none;
+    padding: 0;
+    flex-direction: row;
+    gap: 0;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 200px;
+    min-width: 52px;
+    height: 100vh;
+    padding: 24px 12px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    transition: width 0.3s ease, padding 0.3s ease, background 0.3s, border-color 0.3s;
+    overflow: hidden;
+  }
+  .sidebar.collapsed {
+    width: 52px;
+    padding: 24px 8px;
+  }
+  .sidebar-title {
+    font-size: 18px;
+    font-weight: 700;
+    padding: 8px 12px 20px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+  }
+  .sidebar.collapsed .sidebar-title {
+    opacity: 0;
+  }
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+  }
+  .sidebar-item {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, opacity 0.2s ease;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .sidebar.collapsed .sidebar-item {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .sidebar-item:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
+  .sidebar-item.active {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 500;
+  }
+  .sidebar-bottom {
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+    transition: border-color 0.3s;
+  }
+  .sidebar.collapsed .sidebar-bottom {
+    border-top: none;
+  }
+  .sidebar-theme-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    position: relative;
+    transition: transform 0.2s, background 0.3s, border-color 0.3s;
+    flex-shrink: 0;
+  }
+  .sidebar-theme-btn:hover {
+    transform: scale(1.12);
+  }
+  .sidebar-theme-btn:active {
+    transform: scale(0.92);
+  }
+  .content {
+    flex: 1;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 32px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .content::-webkit-scrollbar {
+    width: 6px;
+  }
+  .content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .content::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+  }
+  .content::-webkit-scrollbar-thumb:hover {
+    background: var(--arrow);
+  }
+  .top-bar {
+    display: none;
+  }
+  .float-nav {
+    display: none;
+  }
+  .tool-section {
+    display: block;
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+  .section-title {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  .convert-wrap {
+    gap: 24px;
+  }
+  .json-wrap {
+    gap: 20px;
+  }
+  .json-textarea {
+    min-height: 220px;
+  }
+  .json-view {
+    max-height: 600px;
+  }
+  .hidden {
+    display: none !important;
+  }
 }

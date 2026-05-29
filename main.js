@@ -15,6 +15,7 @@ const unitConfig = {
 
 const typeList = ["time","length","ts","json"];
 let curType = "time";
+var isPC = window.matchMedia("(min-width: 768px)").matches;
 
 const titleText = document.getElementById("titleText");
 const catMenu = document.getElementById("catMenu");
@@ -22,9 +23,6 @@ const leftVal = document.getElementById("leftVal");
 const rightVal = document.getElementById("rightVal");
 const leftUnit = document.getElementById("leftUnit");
 const rightUnit = document.getElementById("rightUnit");
-const convertWrap = document.querySelector(".convert-wrap");
-const tsWrap = document.getElementById("tsWrap");
-const jsonWrap = document.getElementById("jsonWrap");
 const jsonInput = document.getElementById("jsonInput");
 const jsonOutput = document.getElementById("jsonOutput");
 const formatBtn = document.getElementById("formatBtn");
@@ -118,8 +116,7 @@ initCustomSelect(document.getElementById("tsLeftType"), toggleTsLeft);
 initCustomSelect(document.getElementById("tsRightType"), autoConvertTs);
 
 function autoConvert(){
-  if(curType === "ts") return;
-  const cfg = unitConfig[curType];
+  const cfg = unitConfig.time;
   const v = parseFloat(leftVal.value || 0);
   const f = getSelectValue(leftUnit);
   const t = getSelectValue(rightUnit);
@@ -191,33 +188,64 @@ function escapeHTML(str) {
     .replace(/"/g, "&quot;");
 }
 
-function renderJSON(obj) {
+var JSON_MAX_NODES = 50000;
+var JSON_AUTO_EXPAND_DEPTH = 3;
+
+function countNodes(obj) {
+  if (obj === null || typeof obj !== "object") return 1;
+  var count = 1;
+  if (Array.isArray(obj)) {
+    for (var i = 0; i < obj.length; i++) {
+      count += countNodes(obj[i]);
+      if (count > JSON_MAX_NODES) return count;
+    }
+  } else {
+    var keys = Object.keys(obj);
+    for (var i = 0; i < keys.length; i++) {
+      count += countNodes(obj[keys[i]]);
+      if (count > JSON_MAX_NODES) return count;
+    }
+  }
+  return count;
+}
+
+function renderJSON(obj, depth) {
+  if (depth === undefined) depth = 0;
   if (obj === null) return '<span class="json-null">null</span>';
-  if (typeof obj === "boolean") return '<span class="json-bool">' + obj + '</span>';
-  if (typeof obj === "number") return '<span class="json-number">' + obj + '</span>';
-  if (typeof obj === "string") return '<span class="json-string">"' + escapeHTML(obj) + '"</span>';
+  if (typeof obj === "boolean")
+    return '<span class="json-bool">' + obj + '</span>';
+  if (typeof obj === "number")
+    return '<span class="json-number">' + obj + '</span>';
+  if (typeof obj === "string")
+    return '<span class="json-string">"' + escapeHTML(obj) + '"</span>';
+
+  var open = depth < JSON_AUTO_EXPAND_DEPTH ? " open" : "";
 
   if (Array.isArray(obj)) {
-    if (obj.length === 0) return '<span class="json-bracket">[]</span>';
+    if (obj.length === 0)
+      return '<span class="json-bracket">[]</span>';
     var items = "";
     for (var i = 0; i < obj.length; i++) {
-      items += '<div class="json-row">' + renderJSON(obj[i]);
-      if (i < obj.length - 1) items += '<span class="json-comma">,</span>';
+      items += '<div class="json-row">' + renderJSON(obj[i], depth + 1);
+      if (i < obj.length - 1)
+        items += '<span class="json-comma">,</span>';
       items += '</div>';
     }
-    return '<details open><summary><span class="json-bracket">[</span></summary><div class="json-children">' + items + '</div><div class="json-row"><span class="json-bracket">]</span></div></details>';
+    return '<details' + open + '><summary><span class="json-bracket">[</span><span class="json-hint"> ' + obj.length + ' items </span></summary><div class="json-children">' + items + '</div><div class="json-row"><span class="json-bracket">]</span></div></details>';
   }
 
   if (typeof obj === "object") {
     var keys = Object.keys(obj);
-    if (keys.length === 0) return '<span class="json-bracket">{}</span>';
+    if (keys.length === 0)
+      return '<span class="json-bracket">{}</span>';
     var items = "";
     for (var i = 0; i < keys.length; i++) {
-      items += '<div class="json-row"><span class="json-key">"' + escapeHTML(keys[i]) + '"</span><span class="json-colon">: </span>' + renderJSON(obj[keys[i]]);
-      if (i < keys.length - 1) items += '<span class="json-comma">,</span>';
+      items += '<div class="json-row"><span class="json-key">"' + escapeHTML(keys[i]) + '"</span><span class="json-colon">: </span>' + renderJSON(obj[keys[i]], depth + 1);
+      if (i < keys.length - 1)
+        items += '<span class="json-comma">,</span>';
       items += '</div>';
     }
-    return '<details open><summary><span class="json-bracket">{</span></summary><div class="json-children">' + items + '</div><div class="json-row"><span class="json-bracket">}</span></div></details>';
+    return '<details' + open + '><summary><span class="json-bracket">{</span><span class="json-hint"> ' + keys.length + ' keys </span></summary><div class="json-children">' + items + '</div><div class="json-row"><span class="json-bracket">}</span></div></details>';
   }
 
   return "";
@@ -233,6 +261,11 @@ function formatJSON() {
     }
     const parsed = JSON.parse(val);
     currentJSONText = JSON.stringify(parsed, null, 2);
+    var nodes = countNodes(parsed);
+    if (nodes > JSON_MAX_NODES) {
+      jsonOutput.innerHTML = '<div class="json-error">JSON节点数超过' + JSON_MAX_NODES + '，仅显示纯文本以避免浏览器卡顿</div><pre style="margin:8px 0 0;white-space:pre-wrap;word-break:break-all;font-family:inherit;font-size:inherit;line-height:inherit;max-height:500px;overflow:auto;">' + escapeHTML(currentJSONText.slice(0, 200000)) + (currentJSONText.length > 200000 ? '\n... (已截断)' : '') + '</pre>';
+      return;
+    }
     jsonOutput.innerHTML = renderJSON(parsed);
   } catch (e) {
     jsonOutput.innerHTML = '<div class="json-error">JSON格式错误：' + escapeHTML(e.message) + '</div>';
@@ -312,26 +345,36 @@ function unescapeJSON() {
 }
 
 function initUnits(type){
-  convertWrap.classList.add("hidden");
-  tsWrap.classList.add("hidden");
-  jsonWrap.classList.add("hidden");
+  if (isPC) return;
+  document.getElementById("section-time").classList.add("hidden");
+  document.getElementById("section-length").classList.add("hidden");
+  document.getElementById("section-ts").classList.add("hidden");
+  document.getElementById("section-json").classList.add("hidden");
 
   if(type === "ts"){
-    tsWrap.classList.remove("hidden");
+    document.getElementById("section-ts").classList.remove("hidden");
     titleText.innerText = "时间戳 ↔ 日期";
     return;
   }
   if(type === "json"){
-    jsonWrap.classList.remove("hidden");
+    document.getElementById("section-json").classList.remove("hidden");
     titleText.innerText = "JSON格式化";
     return;
   }
+  if(type === "length"){
+    document.getElementById("section-length").classList.remove("hidden");
+    titleText.innerText = "长度单位";
+    var lengthOpts2 = unitConfig.length.units.map(function(u) { return {v: u.v, n: u.n}; });
+    setSelectOptions(leftUnit2, lengthOpts2);
+    setSelectOptions(rightUnit2, lengthOpts2);
+    return;
+  }
 
-  convertWrap.classList.remove("hidden");
-  const cfg = unitConfig[type];
-  const opts = cfg.units.map(u => ({v: u.v, n: u.n}));
-  setSelectOptions(leftUnit, opts);
-  setSelectOptions(rightUnit, opts);
+  document.getElementById("section-time").classList.remove("hidden");
+  var cfg = unitConfig[type];
+  var timeOpts2 = cfg.units.map(function(u) { return {v: u.v, n: u.n}; });
+  setSelectOptions(leftUnit, timeOpts2);
+  setSelectOptions(rightUnit, timeOpts2);
   titleText.innerText = cfg.name;
 }
 
@@ -343,7 +386,11 @@ minifyBtn.onclick = minifyJSON;
 copyBtn.onclick = copyJSON;
 escapeBtn.onclick = escapeJSON;
 unescapeBtn.onclick = unescapeJSON;
-jsonInput.oninput = formatJSON;
+var _jsonDebounceTimer = null;
+jsonInput.oninput = function() {
+  clearTimeout(_jsonDebounceTimer);
+  _jsonDebounceTimer = setTimeout(formatJSON, 300);
+};
 
 titleText.onclick = (e) => {
   e.stopPropagation();
@@ -374,8 +421,115 @@ document.getElementById("nextBtn").onclick = () => {
 initUnits(curType);
 
 // --- 日夜切换 ---
-document.getElementById("themeToggle").onclick = function() {
+function toggleTheme() {
   var html = document.documentElement;
   var isDark = html.classList.toggle("dark");
   localStorage.setItem("theme", isDark ? "dark" : "light");
-};
+}
+document.getElementById("themeToggle").onclick = toggleTheme;
+var sidebarThemeBtn = document.getElementById("sidebarThemeToggle");
+if (sidebarThemeBtn) sidebarThemeBtn.onclick = toggleTheme;
+
+// --- PC端：长度单位独立转换器 ---
+var leftVal2 = document.getElementById("leftVal2");
+var rightVal2 = document.getElementById("rightVal2");
+var leftUnit2 = document.getElementById("leftUnit2");
+var rightUnit2 = document.getElementById("rightUnit2");
+
+function autoConvertLength() {
+  var cfg = unitConfig.length;
+  var v = parseFloat(leftVal2.value || 0);
+  var f = getSelectValue(leftUnit2);
+  var t = getSelectValue(rightUnit2);
+  if (!f || !t) return;
+  rightVal2.value = (v * cfg.factor[f] / cfg.factor[t]).toFixed(8);
+  rightVal2.classList.remove("pop");
+  void rightVal2.offsetWidth;
+  rightVal2.classList.add("pop");
+}
+
+if (leftUnit2 && rightUnit2) {
+  initCustomSelect(leftUnit2, autoConvertLength);
+  initCustomSelect(rightUnit2, autoConvertLength);
+  leftVal2.oninput = autoConvertLength;
+  var lengthOpts = unitConfig.length.units.map(function(u) { return {v: u.v, n: u.n}; });
+  setSelectOptions(leftUnit2, lengthOpts);
+  setSelectOptions(rightUnit2, lengthOpts);
+}
+
+// --- PC端布局逻辑 ---
+
+function initPC() {
+  var timeOpts = unitConfig.time.units.map(function(u) { return {v: u.v, n: u.n}; });
+  setSelectOptions(leftUnit, timeOpts);
+  setSelectOptions(rightUnit, timeOpts);
+}
+
+if (isPC) {
+  initPC();
+}
+
+// 侧边栏导航
+var sidebarItems = document.querySelectorAll(".sidebar-item");
+sidebarItems.forEach(function(item) {
+  item.onclick = function() {
+    var sectionId = item.dataset.section;
+    var section = document.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    sidebarItems.forEach(function(s) { s.classList.remove("active"); });
+    item.classList.add("active");
+  };
+});
+
+// 滚动高亮
+var mainContent = document.getElementById("mainContent");
+if (mainContent && isPC) {
+  var sections = document.querySelectorAll(".tool-section");
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var id = entry.target.id;
+        sidebarItems.forEach(function(s) {
+          s.classList.toggle("active", s.dataset.section === id);
+        });
+      }
+    });
+  }, { root: mainContent, threshold: 0.3 });
+  sections.forEach(function(s) { observer.observe(s); });
+}
+
+// 响应式切换
+window.matchMedia("(min-width: 768px)").addEventListener("change", function(e) {
+  isPC = e.matches;
+  if (e.matches) {
+    document.querySelectorAll(".tool-section").forEach(function(s) {
+      s.classList.remove("hidden");
+    });
+    initPC();
+  } else {
+    initUnits(curType);
+  }
+});
+
+// 侧边栏自动收缩
+var sidebar = document.getElementById("sidebar");
+var sidebarCollapseTimer = null;
+var SIDEBAR_COLLAPSE_DELAY = 500;
+
+if (sidebar && isPC) {
+  sidebarCollapseTimer = setTimeout(function() {
+    sidebar.classList.add("collapsed");
+  }, SIDEBAR_COLLAPSE_DELAY);
+
+  sidebar.addEventListener("mouseenter", function() {
+    clearTimeout(sidebarCollapseTimer);
+    sidebar.classList.remove("collapsed");
+  });
+  sidebar.addEventListener("mouseleave", function() {
+    sidebarCollapseTimer = setTimeout(function() {
+      sidebar.classList.add("collapsed");
+    }, SIDEBAR_COLLAPSE_DELAY);
+  });
+}
